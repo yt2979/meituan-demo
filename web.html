@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>息月 - 情绪记录与自我关怀</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts: Noto Sans SC & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sage: {
+                            50: '#f4f6f4',
+                            100: '#e3e8e3',
+                            200: '#c8d3c8',
+                            300: '#a3b5a3',
+                            400: '#7e947e',
+                            500: '#5c735c', // 主调鼠尾草绿
+                            600: '#485c48',
+                            700: '#3a493a',
+                            800: '#2f3b2f',
+                            900: '#273127',
+                        },
+                        warm: {
+                            50: '#faf9f6',  // 页面底色 Warm White
+                            100: '#f3f1ec',
+                            200: '#e8e4dc',
+                            300: '#d8d1c3',
+                            400: '#b8ac98',
+                            500: '#988972',
+                        },
+                        muted: {
+                            bg: '#f6f7f6',
+                            border: '#e5e7e5',
+                            text: '#667066',
+                            dark: '#2c352e'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans SC', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #faf9f6;
+            color: #2c352e;
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        /* 自定义微调动画与滚动条 */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d8d1c3;
+            border-radius: 999px;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .breathing-circle {
+            animation: breathe 8s infinite ease-in-out;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.45); opacity: 0.95; }
+        }
+    </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col md:flex-row select-none">
+    <div id="app" class="w-full h-full flex flex-col md:flex-row overflow-hidden">
+
+        <!-- 左侧导航栏 -->
+        <aside class="w-full md:w-64 bg-white/80 backdrop-blur-md border-r border-warm-200/60 flex flex-col justify-between shrink-0 z-20">
+            <div>
+                <!-- 品牌 Header -->
+                <div class="p-6 pb-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-sage-500/15 flex items-center justify-center text-sage-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                            </svg>
+                        </div>
+                        <span class="font-medium text-lg text-sage-900 tracking-wide">息月</span>
+                    </div>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-warm-100 text-warm-500">空间</span>
+                </div>
+
+                <!-- 导航菜单 -->
+                <nav class="px-3 py-2 space-y-1">
+                    <button @click="currentTab = 'home'" :class="currentTab === 'home' ? 'bg-sage-50 text-sage-700 font-medium' : 'text-stone-600 hover:bg-warm-50'" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200">
+                        <i data-lucide="compass" class="w-4 h-4"></i>
+                        <span>首页</span>
+                    </button>
+                    <button @click="currentTab = 'journal'" :class="currentTab === 'journal' ? 'bg-sage-50 text-sage-700 font-medium' : 'text-stone-600 hover:bg-warm-50'" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200">
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                        <span>记录</span>
+                    </button>
+                    <button @click="currentTab = 'insights'" :class="currentTab === 'insights' ? 'bg-sage-50 text-sage-700 font-medium' : 'text-stone-600 hover:bg-warm-50'" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        <span>洞察</span>
+                    </button>
+                    <button @click="currentTab = 'profile'" :class="currentTab === 'profile' ? 'bg-sage-50 text-sage-700 font-medium' : 'text-stone-600 hover:bg-warm-50'" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        <span>我的</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- 快捷开启“记录”按钮 -->
+            <div class="p-4 border-t border-warm-100">
+                <button @click="openRecordModal()" class="w-full flex items-center justify-center space-x-2 bg-sage-600 hover:bg-sage-700 active:bg-sage-800 text-white py-2.5 px-4 rounded-xl shadow-sm hover:shadow text-sm transition-all duration-200">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>记录此刻</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- 主内容区域 -->
+        <main class="flex-1 h-full overflow-y-auto bg-warm-50/50 p-4 md:p-8 relative">
+            
+            <!-- 01 首页视图 -->
+            <div v-if="currentTab === 'home'" class="max-w-4xl mx-auto space-y-8 animate-fade-in pb-12">
+                
+                <!-- 顶部顶部温馨状态标语 -->
+                <header class="space-y-1">
+                    <div class="text-xs font-medium text-sage-600 tracking-wider">今日与你自己对话</div>
+                    <h1 class="text-2xl md:text-3xl font-normal text-stone-800">你现在感觉怎么样？</h1>
+                </header>
+
+                <!-- 核心情绪选择板块 -->
+                <section class="bg-white rounded-2xl p-6 md:p-8 border border-warm-200/70 shadow-sm space-y-6">
+                    <div class="grid grid-cols-5 gap-3 md:gap-4">
+                        <button v-for="mood in moodStates" :key="mood.id" 
+                                @click="selectQuickMood(mood)"
+                                :class="quickForm.moodId === mood.id ? 'bg-sage-50 border-sage-300 text-sage-800 ring-2 ring-sage-200/50' : 'bg-warm-50/60 hover:bg-warm-100/70 border-stone-200/60 text-stone-700'"
+                                class="flex flex-col items-center justify-center p-3 md:p-4 rounded-xl border transition-all duration-200">
+                            <!-- 抽象柔和矢量表情/符号 -->
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center mb-2" :class="mood.bgColor">
+                                <span class="text-lg" :class="mood.textColor">{{ mood.symbol }}</span>
+                            </div>
+                            <span class="text-xs md:text-sm font-medium">{{ mood.name }}</span>
+                        </button>
+                    </div>
+
+                    <!-- 动态滑块：情绪强度 -->
+                    <div v-if="quickForm.moodId" class="pt-2 space-y-3 animate-fade-in">
+                        <div class="flex justify-between items-center text-xs text-stone-500">
+                            <span>现在的情绪有多强烈？</span>
+                            <span class="font-medium text-sage-700 text-sm">{{ quickForm.intensity }} / 10</span>
+                        </div>
+                        <input type="range" min="1" max="10" v-model="quickForm.intensity" 
+                               class="w-full h-1.5 bg-warm-200 rounded-lg appearance-none cursor-pointer accent-sage-600">
+                        <div class="flex justify-between text-[10px] text-stone-400">
+                            <span>微弱</span>
+                            <span>中等</span>
+                            <span>非常强烈</span>
+                        </div>
+                    </div>
+
+                    <!-- 影响因素选择标签 -->
+                    <div v-if="quickForm.moodId" class="pt-2 space-y-3 animate-fade-in">
+                        <div class="text-xs text-stone-500">最近什么事情比较影响你？</div>
+                        <div class="flex flex-wrap gap-2">
+                            <button v-for="factor in factorOptions" :key="factor"
+                                    @click="toggleQuickFactor(factor)"
+                                    :class="quickForm.factors.includes(factor) ? 'bg-sage-600 text-white' : 'bg-warm-100/80 text-stone-600 hover:bg-warm-200/60'"
+                                    class="text-xs px-3 py-1.5 rounded-lg border border-transparent transition-all">
+                                {{ factor }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 可选简短描述 -->
+                    <div v-if="quickForm.moodId" class="pt-2 space-y-2 animate-fade-in">
+                        <div class="text-xs text-stone-500">想多说一点吗？（选填）</div>
+                        <textarea v-model="quickForm.text" placeholder="记录此刻浮现的想法，即使只有几个字也可以..." 
+                                  class="w-full p-3 bg-warm-50/50 border border-warm-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-sage-400 focus:border-sage-400 resize-none h-20 text-stone-700 placeholder-stone-400"></textarea>
+                    </div>
+
+                    <!-- 提交或展开完整分析流程 -->
+                    <div v-if="quickForm.moodId" class="pt-2 flex justify-end space-x-3 border-t border-warm-100">
+                        <button @click="resetQuickForm()" class="px-4 py-2 text-xs text-stone-500 hover:text-stone-700">重置</button>
+                        <button @click="proceedToAnalysis()" class="px-5 py-2 text-xs bg-sage-600 hover:bg-sage-700 text-white rounded-xl shadow-sm transition-all flex items-center space-x-1.5">
+                            <span>理解我的感受</span>
+                            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 首页下方的两个轻量辅助模块 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 给自己一点时间 -->
+                    <div class="bg-white rounded-2xl p-6 border border-warm-200/70 shadow-sm flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex items-center space-x-2 text-sage-600 text-xs font-medium mb-1">
+                                <i data-lucide="wind" class="w-3.5 h-3.5"></i>
+                                <span>给自己一点时间</span>
+                            </div>
+                            <h3 class="text-base font-medium text-stone-800">2 分钟节律呼吸</h3>
+                            <p class="text-xs text-stone-500 mt-1.5 leading-relaxed">
+                                放下手头的困扰，将注意力收回到呼吸上，帮助自主神经系统恢复平稳。
+                            </p>
+                        </div>
+                        <button @click="startBreathingDirectly()" class="self-start text-xs font-medium text-sage-700 hover:text-sage-800 bg-sage-50 hover:bg-sage-100 px-3.5 py-2 rounded-lg transition-all flex items-center space-x-1">
+                            <span>开始呼吸练习</span>
+                            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+
+                    <!-- 最近的一个发现 -->
+                    <div class="bg-white rounded-2xl p-6 border border-warm-200/70 shadow-sm flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex items-center space-x-2 text-amber-700 text-xs font-medium mb-1">
+                                <i data-lucide="lightbulb" class="w-3.5 h-3.5"></i>
+                                <span>最近的一个发现</span>
+                            </div>
+                            <h3 class="text-base font-medium text-stone-800">睡眠与焦虑感的联系</h3>
+                            <p class="text-xs text-stone-500 mt-1.5 leading-relaxed">
+                                最近三次在 23:30 以后入睡的第二天，你记录的焦虑强度平均增加了 2.1 分。
+                            </p>
+                        </div>
+                        <button @click="currentTab = 'insights'" class="self-start text-xs font-medium text-stone-600 hover:text-stone-800 transition-all flex items-center space-x-1">
+                            <span>在洞察中查看更多</span>
+                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 历史最新记录一览 -->
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center px-1">
+                        <span class="text-xs font-medium text-stone-500">最近的记录</span>
+                        <button @click="currentTab = 'journal'" class="text-xs text-sage-600 hover:underline">查看全部</button>
+                    </div>
+                    <div class="bg-white rounded-2xl p-4 border border-warm-200/70 shadow-sm flex items-center justify-between">
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs font-medium text-stone-800">今天 15:24</span>
+                                <span class="text-xs px-2 py-0.5 rounded-md bg-stone-100 text-stone-600">焦虑 · 7/10</span>
+                                <span class="text-xs text-stone-400">学习 · 睡眠</span>
+                            </div>
+                            <p class="text-xs text-stone-500 line-clamp-1">明天需要提交报告，感觉资料准备得还不太够...</p>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-stone-300"></i>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 02 记录页面 (Timeline) -->
+            <div v-if="currentTab === 'journal'" class="max-w-4xl mx-auto space-y-6 animate-fade-in pb-12">
+                <header class="flex justify-between items-end border-b border-warm-200/60 pb-4">
+                    <div>
+                        <h1 class="text-2xl font-normal text-stone-800">情绪时间线</h1>
+                        <p class="text-xs text-stone-500 mt-1">温和地回顾你走过的每一步状态</p>
+                    </div>
+                    <!-- 筛选标签 -->
+                    <div class="flex space-x-2">
+                        <button v-for="filter in timelineFilters" :key="filter"
+                                @click="activeTimelineFilter = filter"
+                                :class="activeTimelineFilter === filter ? 'bg-sage-600 text-white' : 'bg-white text-stone-600 hover:bg-warm-100'"
+                                class="text-xs px-3 py-1.5 rounded-lg border border-warm-200/60 transition-all">
+                            {{ filter }}
+                        </button>
+                    </div>
+                </header>
+
+                <!-- 时间线分组列表 -->
+                <div class="space-y-8">
+                    <div v-for="group in filteredTimeline" :key="group.dateGroup" class="space-y-3">
+                        <div class="text-xs font-medium text-stone-400 tracking-wider sticky top-0 bg-warm-50/90 backdrop-blur-sm py-1 z-10">
+                            {{ group.dateGroup }}
+                        </div>
+
+                        <div class="space-y-3">
+                            <div v-for="item in group.items" :key="item.id" 
+                                 @click="openRecordDetail(item)"
+                                 class="bg-white rounded-xl p-5 border border-warm-200/70 shadow-sm hover:border-sage-300 transition-all duration-200 cursor-pointer space-y-3">
+                                
+                                <div class="flex justify-between items-start">
+                                    <div class="flex items-center space-x-2.5">
+                                        <span class="w-2.5 h-2.5 rounded-full" :class="item.moodColor"></span>
+                                        <span class="text-sm font-medium text-stone-800">{{ item.primaryMood }}</span>
+                                        <span class="text-xs text-stone-400">·</span>
+                                        <span class="text-xs text-stone-500">强度 {{ item.intensity }}/10</span>
+                                    </div>
+                                    <span class="text-xs text-stone-400">{{ item.time }}</span>
+                                </div>
+
+                                <p v-if="item.note" class="text-xs text-stone-600 leading-relaxed bg-warm-50/50 p-2.5 rounded-lg">
+                                    “{{ item.note }}”
+                                </p>
+
+                                <div class="flex items-center justify-between pt-1">
+                                    <div class="flex flex-wrap gap-1.5">
+                                        <span v-for="tag in item.tags" :key="tag" class="text-[11px] px-2 py-0.5 rounded bg-warm-100/70 text-stone-500">
+                                            {{ tag }}
+                                        </span>
+                                    </div>
+                                    <span v-if="item.actionTaken" class="text-[11px] text-sage-600 flex items-center space-x-1">
+                                        <i data-lucide="check-circle-2" class="w-3 h-3"></i>
+                                        <span>已完成：{{ item.actionTaken }}</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 03 洞察页面 (Insights) -->
+            <div v-if="currentTab === 'insights'" class="max-w-4xl mx-auto space-y-8 animate-fade-in pb-12">
+                <header class="border-b border-warm-200/60 pb-4">
+                    <h1 class="text-2xl font-normal text-stone-800">理解自己的空间</h1>
+                    <p class="text-xs text-stone-500 mt-1">这里不是客观的数据表，而是帮助你看见自身规律的镜子</p>
+                </header>
+
+                <!-- 最近情绪变化趋势图 -->
+                <div class="bg-white rounded-2xl p-6 border border-warm-200/70 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-sm font-medium text-stone-800">最近 7 天情绪变化</h3>
+                            <p class="text-xs text-stone-400 mt-0.5">线条展示了每日记录的总体情绪波动区间</p>
+                        </div>
+                        <span class="text-xs px-2.5 py-1 rounded-lg bg-warm-100 text-stone-600">近 7 天</span>
+                    </div>
+                    <div class="h-48 w-full">
+                        <canvas id="insightsTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 最常影响你的因素 -->
+                    <div class="bg-white rounded-2xl p-6 border border-warm-200/70 shadow-sm space-y-4">
+                        <h3 class="text-sm font-medium text-stone-800">最近主要的影响因素</h3>
+                        <div class="space-y-3">
+                            <div v-for="factor in topFactors" :key="factor.name" class="space-y-1">
+                                <div class="flex justify-between text-xs text-stone-600">
+                                    <span>{{ factor.name }}</span>
+                                    <span class="text-stone-400">{{ factor.percentage }}% 的记录涉及</span>
+                                </div>
+                                <div class="w-full bg-warm-100 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-sage-500 h-full rounded-full transition-all duration-500" :style="{ width: factor.percentage + '%' }"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 什么对你最有帮助 -->
+                    <div class="bg-white rounded-2xl p-6 border border-warm-200/70 shadow-sm space-y-4">
+                        <h3 class="text-sm font-medium text-stone-800">对你较有帮助的自我关怀</h3>
+                        <div class="space-y-3">
+                            <div v-for="act in helpfulActions" :key="act.name" class="flex items-center justify-between p-2.5 bg-warm-50/60 rounded-xl">
+                                <div class="space-y-0.5">
+                                    <div class="text-xs font-medium text-stone-700">{{ act.name }}</div>
+                                    <div class="text-[11px] text-stone-400">已进行 {{ act.count }} 次</div>
+                                </div>
+                                <div class="text-xs font-medium text-sage-700 bg-sage-50 px-2.5 py-1 rounded-lg">
+                                    平均改善 +{{ act.improvement }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 总结规律卡片 -->
+                <div class="bg-sage-50/60 rounded-2xl p-6 border border-sage-200/60 space-y-3">
+                    <div class="flex items-center space-x-2 text-sage-800 text-xs font-medium">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        <span>发现了这些规律</span>
+                    </div>
+                    <p class="text-xs text-sage-900 leading-relaxed">
+                        在过去一周里，每当你在记录中提及“睡眠不足”时，接下来的半天内更容易伴随较高的“焦虑”与“疲惫”感。尝试在疲惫时给予自己 5 分钟的暂停，有助于防止情绪进一步累积。
+                    </p>
+                </div>
+            </div>
+
+            <!-- 04 我的 (Profile) -->
+            <div v-if="currentTab === 'profile'" class="max-w-3xl mx-auto space-y-6 animate-fade-in pb-12">
+                <header class="border-b border-warm-200/60 pb-4">
+                    <h1 class="text-2xl font-normal text-stone-800">个人与偏好</h1>
+                    <p class="text-xs text-stone-500 mt-1">保持简单与私密，这里的所有数据都完全属于你自己</p>
+                </header>
+
+                <div class="bg-white rounded-2xl p-6 border border-warm-200/70 shadow-sm space-y-6">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-14 h-14 rounded-full bg-sage-100 flex items-center justify-center text-sage-700 font-medium text-lg">
+                            默
+                        </div>
+                        <div>
+                            <div class="text-base font-medium text-stone-800">平静的同行者</div>
+                            <div class="text-xs text-stone-400 mt-0.5">已陪伴记录 18 天</div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-warm-100 pt-4 space-y-4">
+                        <div class="flex items-center justify-between py-1">
+                            <div>
+                                <div class="text-xs font-medium text-stone-700">每日定时关怀提醒</div>
+                                <div class="text-[11px] text-stone-400">在晚间提醒自己做一次简短记录</div>
+                            </div>
+                            <input type="checkbox" checked class="accent-sage-600 w-4 h-4 cursor-pointer">
+                        </div>
+
+                        <div class="flex items-center justify-between py-1">
+                            <div>
+                                <div class="text-xs font-medium text-stone-700">AI 理解语气</div>
+                                <div class="text-[11px] text-stone-400">当前设为：客观、温和、克制</div>
+                            </div>
+                            <span class="text-xs text-stone-500">已设定</span>
+                        </div>
+
+                        <div class="flex items-center justify-between py-1">
+                            <div>
+                                <div class="text-xs font-medium text-stone-700">数据加密导出</div>
+                                <div class="text-[11px] text-stone-400">随时备份你的全部心情轨迹</div>
+                            </div>
+                            <button class="text-xs text-sage-600 hover:underline">导出 CSV</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- 核心交互弹窗：情绪记录及AI自我关怀完整闭环 -->
+        <div v-if="showModal" class="fixed inset-0 bg-stone-900/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl border border-warm-200 shadow-xl max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-fade-in">
+                
+                <!-- Modal 头部步骤指示器 -->
+                <div class="p-4 border-b border-warm-100 flex items-center justify-between text-xs text-stone-400">
+                    <span class="font-medium text-stone-600">
+                        {{ modalStepTitle }}
+                    </span>
+                    <button @click="closeModal()" class="p-1 hover:bg-warm-100 rounded-lg text-stone-400 hover:text-stone-600">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Modal 内容区 -->
+                <div class="p-6 overflow-y-auto flex-1 space-y-6">
+                    
+                    <!-- 步骤 1: 感受选择 -->
+                    <div v-if="modalStep === 1" class="space-y-6 animate-fade-in">
+                        <div class="space-y-1">
+                            <h2 class="text-lg font-normal text-stone-800">此刻的主要感受是什么？</h2>
+                            <p class="text-xs text-stone-400">选择最符合你当下状态的一个词语</p>
+                        </div>
+
+                        <div class="grid grid-cols-4 gap-2.5">
+                            <button v-for="emotion in emotionOptions" :key="emotion.name"
+                                    @click="flowForm.primaryMood = emotion.name"
+                                    :class="flowForm.primaryMood === emotion.name ? 'bg-sage-600 text-white' : 'bg-warm-50 text-stone-700 hover:bg-warm-100'"
+                                    class="py-2.5 px-3 rounded-xl text-xs font-medium transition-all text-center">
+                                {{ emotion.name }}
+                            </button>
+                        </div>
+
+                        <div v-if="flowForm.primaryMood" class="space-y-3 pt-2">
+                            <div class="flex justify-between items-center text-xs text-stone-500">
+                                <span>情绪强度</span>
+                                <span class="font-medium text-sage-700 text-sm">{{ flowForm.intensity }} / 10</span>
+                            </div>
+                            <input type="range" min="1" max="10" v-model="flowForm.intensity" 
+                                   class="w-full h-1.5 bg-warm-200 rounded-lg appearance-none cursor-pointer accent-sage-600">
+                        </div>
+                    </div>
+
+                    <!-- 步骤 2: 影响因素与记事 -->
+                    <div v-if="modalStep === 2" class="space-y-6 animate-fade-in">
+                        <div class="space-y-1">
+                            <h2 class="text-lg font-normal text-stone-800">最近什么比较影响你？</h2>
+                            <p class="text-xs text-stone-400">可以选择多个影响因素，也可以留空</p>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2">
+                            <button v-for="factor in factorOptions" :key="factor"
+                                    @click="toggleFlowFactor(factor)"
+                                    :class="flowForm.factors.includes(factor) ? 'bg-sage-600 text-white' : 'bg-warm-50 text-stone-600 hover:bg-warm-100'"
+                                    class="text-xs px-3.5 py-2 rounded-xl transition-all">
+                                {{ factor }}
+                            </button>
+                        </div>
+
+                        <div class="space-y-2 pt-2">
+                            <label class="text-xs text-stone-500">想记录些什么？</label>
+                            <textarea v-model="flowForm.text" 
+                                      placeholder="发生的事情、现在最让你在意的，或者最担心的事情..." 
+                                      class="w-full p-3 bg-warm-50/60 border border-warm-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-sage-400 resize-none h-24 text-stone-700 placeholder-stone-400"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 步骤 3: AI 情绪理解分析 (模拟加载与结果确认) -->
+                    <div v-if="modalStep === 3" class="space-y-6 animate-fade-in">
+                        <div v-if="aiAnalyzing" class="py-12 flex flex-col items-center justify-center space-y-4">
+                            <div class="w-8 h-8 rounded-full border-2 border-sage-500 border-t-transparent animate-spin"></div>
+                            <p class="text-xs text-stone-500">正在理清这份感受的上下文...</p>
+                        </div>
+
+                        <div v-else class="space-y-6">
+                            <!-- 模块 1: 正在经历 -->
+                            <div class="space-y-2">
+                                <span class="text-xs text-stone-400 font-medium">你现在可能正在经历</span>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm font-medium text-sage-800 bg-sage-50 px-3 py-1 rounded-lg border border-sage-200">
+                                        主要：{{ flowForm.primaryMood }}
+                                    </span>
+                                    <span v-if="flowForm.factors.length" class="text-xs text-stone-500 bg-warm-100 px-2.5 py-1 rounded-lg">
+                                        次要：注意力分散 / 能量消耗
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- 模块 2: 影响事件与修正 -->
+                            <div class="space-y-2">
+                                <span class="text-xs text-stone-400 font-medium">可能影响你的事情</span>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <span v-for="f in flowForm.factors" :key="f" class="text-xs bg-warm-100 text-stone-700 px-2.5 py-1 rounded-md">
+                                        {{ f }}
+                                    </span>
+                                    <span v-if="!flowForm.factors.length" class="text-xs text-stone-400">未指定特定事件</span>
+                                </div>
+
+                                <div class="p-3 bg-warm-50 rounded-xl border border-warm-200/60 flex justify-between items-center text-xs mt-2">
+                                    <span class="text-stone-600">这些符合你现在的感受吗？</span>
+                                    <div class="flex space-x-2">
+                                        <button @click="aiConfirmed = true" :class="aiConfirmed ? 'bg-sage-600 text-white' : 'bg-white text-stone-600'" class="px-2.5 py-1 rounded-lg border transition-all">符合</button>
+                                        <button @click="modalStep = 2" class="px-2.5 py-1 rounded-lg border bg-white text-stone-600 hover:bg-warm-100">调整一下</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 模块 3: 观察建议 -->
+                            <div class="p-4 bg-sage-50/80 rounded-xl border border-sage-200/50 space-y-1.5">
+                                <div class="text-xs font-medium text-sage-800">一点观察</div>
+                                <p class="text-xs text-sage-900 leading-relaxed">
+                                    最近的压力似乎不只来自眼前的任务，也和你担心自己准备不足有关。现在可能不需要立刻解决所有事情，可以先让身体慢下来一点。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 步骤 4: 自我关怀推荐与直接交互练习 -->
+                    <div v-if="modalStep === 4" class="space-y-5 animate-fade-in">
+                        <div class="space-y-1">
+                            <h2 class="text-base font-normal text-stone-800">现在可以为自己做点什么？</h2>
+                            <p class="text-xs text-stone-400">选择一个轻量的小行动，无需有压力</p>
+                        </div>
+
+                        <!-- 正在练习状态 -->
+                        <div v-if="activeExercise" class="py-6 space-y-6 text-center animate-fade-in">
+                            <div class="relative w-32 h-32 mx-auto flex items-center justify-center">
+                                <div class="absolute inset-0 bg-sage-200 rounded-full breathing-circle"></div>
+                                <div class="relative z-10 text-xs font-medium text-sage-800">
+                                    {{ exerciseTimer }}s
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="text-sm font-medium text-stone-800">{{ activeExercise.title }}</div>
+                                <div class="text-xs text-stone-500">{{ activeExercise.guideText }}</div>
+                            </div>
+                            <button @click="finishExercise()" class="px-4 py-2 text-xs bg-sage-600 text-white rounded-xl shadow-sm">
+                                完成练习
+                            </button>
+                        </div>
+
+                        <!-- 推荐列表 -->
+                        <div v-else class="space-y-3">
+                            <div v-for="care in careRecommendations" :key="care.id" 
+                                 class="p-4 rounded-xl border border-warm-200/80 bg-white hover:border-sage-300 transition-all space-y-2">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <span class="text-[10px] font-medium px-2 py-0.5 rounded bg-sage-50 text-sage-700">
+                                            {{ care.duration }}
+                                        </span>
+                                        <h4 class="text-xs font-medium text-stone-800 mt-1">{{ care.title }}</h4>
+                                    </div>
+                                    <button @click="startCareExercise(care)" class="text-xs px-3 py-1.5 bg-sage-600 hover:bg-sage-700 text-white rounded-lg transition-all">
+                                        开始
+                                    </button>
+                                </div>
+                                <p class="text-xs text-stone-500 leading-relaxed">{{ care.reason }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 步骤 5: 行动后反馈与对比闭环 -->
+                    <div v-if="modalStep === 5" class="space-y-6 animate-fade-in text-center py-4">
+                        <div class="space-y-1">
+                            <h2 class="text-lg font-normal text-stone-800">现在感觉怎么样？</h2>
+                            <p class="text-xs text-stone-400">再次评估一下你的情绪强度</p>
+                        </div>
+
+                        <div class="p-6 bg-warm-50 rounded-2xl border border-warm-200/60 space-y-4">
+                            <div class="flex justify-center items-center space-x-8">
+                                <div>
+                                    <div class="text-[11px] text-stone-400">行动前</div>
+                                    <div class="text-xl font-medium text-stone-700">{{ flowForm.intensity }} / 10</div>
+                                </div>
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-stone-300"></i>
+                                <div>
+                                    <div class="text-[11px] text-sage-600 font-medium">行动后</div>
+                                    <div class="text-2xl font-semibold text-sage-700">{{ postIntensity }} / 10</div>
+                                </div>
+                            </div>
+
+                            <input type="range" min="1" max="10" v-model="postIntensity" 
+                                   class="w-full h-1.5 bg-warm-200 rounded-lg appearance-none cursor-pointer accent-sage-600">
+
+                            <div class="text-xs text-sage-700 font-medium bg-white py-2 px-3 rounded-lg border border-warm-200/50">
+                                {{ postIntensity < flowForm.intensity ? '比刚才好了一点，情绪强度降低了 ' + (flowForm.intensity - postIntensity) : '感觉稍有平复，给自己一些时间' }}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Modal 底部控制按键 -->
+                <div class="p-4 border-t border-warm-100 flex justify-between items-center bg-warm-50/30">
+                    <button v-if="modalStep > 1 && modalStep < 5 && !activeExercise" @click="modalStep--" class="px-4 py-2 text-xs text-stone-500 hover:text-stone-700">
+                        上一步
+                    </button>
+                    <div v-else></div>
+
+                    <button v-if="modalStep === 1" @click="modalStep = 2" :disabled="!flowForm.primaryMood" class="px-5 py-2 text-xs bg-sage-600 disabled:opacity-50 text-white rounded-xl">
+                        下一步
+                    </button>
+
+                    <button v-if="modalStep === 2" @click="triggerAIAnalysis()" class="px-5 py-2 text-xs bg-sage-600 text-white rounded-xl">
+                        生成思考
+                    </button>
+
+                    <button v-if="modalStep === 3" @click="modalStep = 4" class="px-5 py-2 text-xs bg-sage-600 text-white rounded-xl">
+                        看看可以做点什么
+                    </button>
+
+                    <button v-if="modalStep === 4 && !activeExercise" @click="modalStep = 5" class="px-4 py-2 text-xs text-stone-500 hover:text-stone-700">
+                        跳过行动
+                    </button>
+
+                    <button v-if="modalStep === 5" @click="saveFinalRecord()" class="px-6 py-2 text-xs bg-sage-600 text-white rounded-xl shadow-sm">
+                        保存这次记录
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                // 当前页面 Tab
+                const currentTab = ref('home');
+
+                // 核心状态数据: 情绪种类定义
+                const moodStates = [
+                    { id: 'bad', name: '很糟糕', symbol: '☁️', bgColor: 'bg-stone-100', textColor: 'text-stone-600' },
+                    { id: 'not_good', name: '不太好', symbol: '🌧️', bgColor: 'bg-stone-100', textColor: 'text-stone-600' },
+                    { id: 'normal', name: '一般', symbol: '🍃', bgColor: 'bg-sage-50', textColor: 'text-sage-600' },
+                    { id: 'good', name: '还不错', symbol: '🌤️', bgColor: 'bg-amber-50', textColor: 'text-amber-600' },
+                    { id: 'great', name: '很好', symbol: '☀️', bgColor: 'bg-amber-100/60', textColor: 'text-amber-700' }
+                ];
+
+                const emotionOptions = [
+                    { name: '焦虑' }, { name: '疲惫' }, { name: '平静' }, { name: '烦躁' },
+                    { name: '低落' }, { name: '开心' }, { name: '满足' }, { name: '孤独' }
+                ];
+
+                const factorOptions = [
+                    '学习', '工作', '求职', '关系', '家庭', '睡眠', '健康', '金钱', '自我压力', '其他'
+                ];
+
+                // 首页快捷选择 Form
+                const quickForm = ref({
+                    moodId: null,
+                    intensity: 6,
+                    factors: [],
+                    text: ''
+                });
+
+                function selectQuickMood(mood) {
+                    quickForm.value.moodId = mood.id;
+                }
+
+                function toggleQuickFactor(factor) {
+                    const idx = quickForm.value.factors.indexOf(factor);
+                    if (idx > -1) quickForm.value.factors.splice(idx, 1);
+                    else quickForm.value.factors.push(factor);
+                }
+
+                function resetQuickForm() {
+                    quickForm.value = { moodId: null, intensity: 6, factors: [], text: '' };
+                }
+
+                // Modal 完整流转 Modal
+                const showModal = ref(false);
+                const modalStep = ref(1);
+                const aiAnalyzing = ref(false);
+                const aiConfirmed = ref(false);
+
+                const flowForm = ref({
+                    primaryMood: '',
+                    intensity: 6,
+                    factors: [],
+                    text: ''
+                });
+
+                const postIntensity = ref(4);
+
+                function openRecordModal() {
+                    modalStep.value = 1;
+                    flowForm.value = { primaryMood: '', intensity: 6, factors: [], text: '' };
+                    showModal.value = true;
+                    nextTick(() => lucide.createIcons());
+                }
+
+                function proceedToAnalysis() {
+                    // 将首页快捷内容带入完整流转 Modal
+                    const matchedMood = moodStates.find(m => m.id === quickForm.value.moodId);
+                    flowForm.value.primaryMood = matchedMood ? matchedMood.name : '焦虑';
+                    flowForm.value.intensity = quickForm.value.intensity;
+                    flowForm.value.factors = [...quickForm.value.factors];
+                    flowForm.value.text = quickForm.value.text;
+
+                    showModal.value = true;
+                    triggerAIAnalysis();
+                }
+
+                function triggerAIAnalysis() {
+                    modalStep.value = 3;
+                    aiAnalyzing.value = true;
+                    setTimeout(() => {
+                        aiAnalyzing.value = false;
+                        nextTick(() => lucide.createIcons());
+                    }, 1200);
+                }
+
+                function toggleFlowFactor(factor) {
+                    const idx = flowForm.value.factors.indexOf(factor);
+                    if (idx > -1) flowForm.value.factors.splice(idx, 1);
+                    else flowForm.value.factors.push(factor);
+                }
+
+                function closeModal() {
+                    showModal.value = false;
+                    activeExercise.value = null;
+                    if (timerInterval) clearInterval(timerInterval);
+                }
+
+                const modalStepTitle = computed(() => {
+                    switch (modalStep.value) {
+                        case 1: return '步骤 1/5 · 此刻的感受';
+                        case 2: return '步骤 2/5 · 影响因素';
+                        case 3: return '步骤 3/5 · AI 理解与观察';
+                        case 4: return '步骤 4/5 · 自我关怀推荐';
+                        case 5: return '步骤 5/5 · 变化对比';
+                        default: return '';
+                    }
+                });
+
+                // 自我关怀推荐列表
+                const careRecommendations = [
+                    {
+                        id: 1,
+                        duration: '2 分钟',
+                        title: '节律呼吸练习',
+                        reason: '先让身体慢下来，再处理眼前的事情。通过延长呼气释放压力。',
+                        guideText: '吸气 4 秒，屏气 4 秒，呼气 6 秒... 将注意力集中在气流上。'
+                    },
+                    {
+                        id: 2,
+                        duration: '5 分钟',
+                        title: '感官回归练习',
+                        reason: '如果现在脑子很乱，可以先将注意力拉回到周围真实的环境中。',
+                        guideText: '环顾四周，找到 5 种颜色，触摸身边 3 种不同质感的材质。'
+                    },
+                    {
+                        id: 3,
+                        duration: '10 分钟',
+                        title: '出去走一走',
+                        reason: '短暂离开当前封闭的环境，可能比继续硬撑更有帮助。',
+                        guideText: '不带任何目的，沿着走廊或街道漫无目的地走 10 分钟。'
+                    }
+                ];
+
+                // 交互练习控制
+                const activeExercise = ref(null);
+                const exerciseTimer = ref(30);
+                let timerInterval = null;
+
+                function startCareExercise(care) {
+                    activeExercise.value = care;
+                    exerciseTimer.value = 30;
+                    timerInterval = setInterval(() => {
+                        if (exerciseTimer.value > 0) {
+                            exerciseTimer.value--;
+                        } else {
+                            finishExercise();
+                        }
+                    }, 1000);
+                }
+
+                function finishExercise() {
+                    if (timerInterval) clearInterval(timerInterval);
+                    activeExercise.value = null;
+                    postIntensity.value = Math.max(1, flowForm.value.intensity - 2);
+                    modalStep.value = 5;
+                }
+
+                function startBreathingDirectly() {
+                    openRecordModal();
+                    flowForm.value.primaryMood = '疲惫';
+                    modalStep.value = 4;
+                    startCareExercise(careRecommendations[0]);
+                }
+
+                // 历史记录 Timeline 数据
+                const timelineFilters = ['全部', '焦虑', '疲惫', '平稳'];
+                const activeTimelineFilter = ref('全部');
+
+                const rawTimeline = ref([
+                    {
+                        dateGroup: '今天',
+                        items: [
+                            {
+                                id: 101,
+                                time: '15:24',
+                                primaryMood: '焦虑',
+                                intensity: 7,
+                                moodColor: 'bg-amber-500',
+                                tags: ['学习', '睡眠'],
+                                note: '明天考试，但感觉自己准备得不够……',
+                                actionTaken: '2分钟节律呼吸'
+                            }
+                        ]
+                    },
+                    {
+                        dateGroup: '昨天',
+                        items: [
+                            {
+                                id: 102,
+                                time: '21:10',
+                                primaryMood: '疲惫',
+                                intensity: 6,
+                                moodColor: 'bg-stone-400',
+                                tags: ['工作', '关系'],
+                                note: '沟通耗费了大量精力，现在只想安静呆着。',
+                                actionTaken: '5分钟感官回归'
+                            }
+                        ]
+                    },
+                    {
+                        dateGroup: '本周更早',
+                        items: [
+                            {
+                                id: 103,
+                                time: '周一 10:15',
+                                primaryMood: '平静',
+                                intensity: 3,
+                                moodColor: 'bg-sage-500',
+                                tags: ['健康'],
+                                note: '早上散步了10分钟，感觉阳光很好。',
+                                actionTaken: '散步'
+                            }
+                        ]
+                    }
+                ]);
+
+                const filteredTimeline = computed(() => {
+                    if (activeTimelineFilter.value === '全部') return rawTimeline.value;
+                    return rawTimeline.value.map(group => ({
+                        dateGroup: group.dateGroup,
+                        items: group.items.filter(item => item.primaryMood === activeTimelineFilter.value)
+                    })).filter(group => group.items.length > 0);
+                });
+
+                function saveFinalRecord() {
+                    rawTimeline.value[0].items.unshift({
+                        id: Date.now(),
+                        time: '刚刚',
+                        primaryMood: flowForm.value.primaryMood || '微调',
+                        intensity: postIntensity.value,
+                        moodColor: 'bg-sage-500',
+                        tags: flowForm.value.factors.length ? flowForm.value.factors : ['自我关怀'],
+                        note: flowForm.value.text || '完成了一次自我倾听与练习。',
+                        actionTaken: '自我关怀小行动'
+                    });
+                    closeModal();
+                    resetQuickForm();
+                    currentTab.value = 'journal';
+                }
+
+                function openRecordDetail(item) {
+                    // 查看详情可扩展弹窗或卡片展开
+                }
+
+                // 洞察页面数据
+                const topFactors = [
+                    { name: '学习压力', percentage: 45 },
+                    { name: '睡眠不足', percentage: 30 },
+                    { name: '人际沟通', percentage: 15 }
+                ];
+
+                const helpfulActions = [
+                    { name: '散步', count: 6, improvement: 1.8 },
+                    { name: '呼吸练习', count: 12, improvement: 1.4 },
+                    { name: '音乐', count: 8, improvement: 0.8 }
+                ];
+
+                // 初始化 Chart.js
+                function initTrendChart() {
+                    const ctx = document.getElementById('insightsTrendChart');
+                    if (!ctx) return;
+
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['周一', '周二', '周三', '周四', '周五', '周六', '今天'],
+                            datasets: [{
+                                label: '情绪强度',
+                                data: [6, 8, 5, 7, 4, 3, 5],
+                                borderColor: '#5c735c',
+                                backgroundColor: 'rgba(92, 115, 92, 0.08)',
+                                borderWidth: 2,
+                                pointBackgroundColor: '#5c735c',
+                                pointRadius: 3,
+                                fill: true,
+                                tension: 0.35
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false }
+                            },
+                            scales: {
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { font: { size: 11 }, color: '#888' }
+                                },
+                                y: {
+                                    min: 0,
+                                    max: 10,
+                                    grid: { color: '#f0ede6' },
+                                    ticks: { font: { size: 10 }, color: '#aaa', stepSize: 2 }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                onMounted(() => {
+                    lucide.createIcons();
+                    setTimeout(() => initTrendChart(), 100);
+                });
+
+                return {
+                    currentTab,
+                    moodStates,
+                    emotionOptions,
+                    factorOptions,
+                    quickForm,
+                    selectQuickMood,
+                    toggleQuickFactor,
+                    resetQuickForm,
+                    proceedToAnalysis,
+                    showModal,
+                    modalStep,
+                    modalStepTitle,
+                    openRecordModal,
+                    closeModal,
+                    flowForm,
+                    toggleFlowFactor,
+                    aiAnalyzing,
+                    aiConfirmed,
+                    triggerAIAnalysis,
+                    careRecommendations,
+                    activeExercise,
+                    exerciseTimer,
+                    startCareExercise,
+                    finishExercise,
+                    startBreathingDirectly,
+                    postIntensity,
+                    saveFinalRecord,
+                    activeTimelineFilter,
+                    timelineFilters,
+                    filteredTimeline,
+                    openRecordDetail,
+                    topFactors,
+                    helpfulActions
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
